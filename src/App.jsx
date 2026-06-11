@@ -4,6 +4,7 @@ import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
 import Payments from './pages/Payments'
+import Insights from './pages/Insights'
 
 const COLORS = { accent:'#0F7B6C', accentL:'#13A88F', gold:'#F4A020' }
 
@@ -43,11 +44,11 @@ export default function App() {
     { key:'clients',   icon:'👥', label:'Clients' },
     { key:'payments',  icon:'💳', label:'Payments' },
     { key:'invoices',  icon:'🧾', label:'Invoices', soon: true },
-    { key:'insights',  icon:'🤖', label:'AI Insights', soon: true },
+    { key:'insights',  icon:'🤖', label:'AI Insights' },
     { key:'reports',   icon:'📈', label:'Reports', soon: true },
   ]
 
-  const pages = { dashboard: Dashboard, clients: Clients, payments: Payments }
+  const pages = { dashboard: Dashboard, clients: Clients, payments: Payments, insights: Insights }
   const ActivePage = pages[page] || Dashboard
 
   return (
