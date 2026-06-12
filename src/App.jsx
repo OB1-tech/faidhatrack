@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
 import Payments from './pages/Payments'
 import Insights from './pages/Insights'
+import Invoices from './pages/Invoices'
+import InvoicePublic from './pages/InvoicePublic'
 
 const COLORS = { accent:'#0F7B6C', accentL:'#13A88F', gold:'#F4A020' }
 
@@ -12,6 +14,9 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [page, setPage]       = useState('dashboard')
+
+  // Check if this is a public invoice link e.g. /invoice/INV-001
+  const isPublicInvoice = window.location.pathname.startsWith('/invoice/')
 
   useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
@@ -23,6 +28,9 @@ export default function App() {
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  // Public invoice route — no auth needed
+  if (isPublicInvoice) return <InvoicePublic />
 
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F7F8FA' }}>
@@ -41,14 +49,20 @@ export default function App() {
 
   const navItems = [
     { key:'dashboard', icon:'📊', label:'Dashboard' },
+    { key:'invoices',  icon:'🧾', label:'Invoices' },
     { key:'clients',   icon:'👥', label:'Clients' },
     { key:'payments',  icon:'💳', label:'Payments' },
-    { key:'invoices',  icon:'🧾', label:'Invoices', soon: true },
     { key:'insights',  icon:'🤖', label:'AI Insights' },
     { key:'reports',   icon:'📈', label:'Reports', soon: true },
   ]
 
-  const pages = { dashboard: Dashboard, clients: Clients, payments: Payments, insights: Insights }
+  const pages = {
+    dashboard: Dashboard,
+    invoices:  Invoices,
+    clients:   Clients,
+    payments:  Payments,
+    insights:  Insights,
+  }
   const ActivePage = pages[page] || Dashboard
 
   return (
@@ -62,7 +76,6 @@ export default function App() {
             <div style={{ color:COLORS.accentL, fontSize:'9px', letterSpacing:'1.5px', textTransform:'uppercase' }}>Invoice Manager</div>
           </div>
         </div>
-
         <nav style={{ padding:'16px 12px', display:'flex', flexDirection:'column', gap:'3px', flex:1 }}>
           <div style={{ color:'#475569', fontSize:'10px', fontWeight:'600', letterSpacing:'1.5px', textTransform:'uppercase', padding:'12px 10px 5px' }}>Main</div>
           {navItems.map(item => (
@@ -82,7 +95,6 @@ export default function App() {
             </button>
           ))}
         </nav>
-
         <div style={{ padding:'14px 12px 0', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'8px 10px' }}>
             <div style={{ width:'30px', height:'30px', background:`linear-gradient(135deg,${COLORS.accent},${COLORS.gold})`, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'11px', fontWeight:'700', flexShrink:0 }}>{userInit}</div>
@@ -96,7 +108,7 @@ export default function App() {
         </div>
       </aside>
 
-      {/* MAIN — offset by sidebar width */}
+      {/* MAIN */}
       <div style={{ marginLeft:'220px', flex:1, display:'flex', flexDirection:'column', minHeight:'100vh' }}>
         <ActivePage session={session} onNav={setPage} />
       </div>
