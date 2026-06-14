@@ -5,43 +5,47 @@ const fmt = n => 'KES ' + Number(n).toLocaleString('en-KE', { minimumFractionDig
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-KE', { day:'numeric', month:'long', year:'numeric' }) : '—'
 
 const statusStyle = s => ({
-  paid:    { bg:'#DCFCE7', color:'#166534', label:'✓ PAID',    border:'#BBF7D0' },
-  unpaid:  { bg:'#FEF9C3', color:'#854D0E', label:'UNPAID',    border:'#FDE68A' },
-  overdue: { bg:'#FEE2E2', color:'#991B1B', label:'OVERDUE',   border:'#FECACA' },
-  draft:   { bg:'#F1F5F9', color:'#475569', label:'DRAFT',     border:'#E2E8F0' },
+  paid:    { bg:'#DCFCE7', color:'#166534', label:'✓ PAID',  border:'#BBF7D0' },
+  unpaid:  { bg:'#FEF9C3', color:'#854D0E', label:'UNPAID',  border:'#FDE68A' },
+  overdue: { bg:'#FEE2E2', color:'#991B1B', label:'OVERDUE', border:'#FECACA' },
+  draft:   { bg:'#F1F5F9', color:'#475569', label:'DRAFT',   border:'#E2E8F0' },
 }[s] || { bg:'#F1F5F9', color:'#475569', label:s, border:'#E2E8F0' })
 
 export default function InvoicePublic() {
-  const [invoice, setInvoice] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
+  const [invoice,  setInvoice]  = useState(null)
+  const [profile,  setProfile]  = useState(null)
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState('')
   const [confirming, setConfirming] = useState(false)
-  const [confirmed, setConfirmed]   = useState(false)
+  const [confirmed,  setConfirmed]  = useState(false)
 
   const invoiceNumber = window.location.pathname.split('/invoice/')[1]?.toUpperCase()
 
   useEffect(() => {
     if (!invoiceNumber) { setError('No invoice specified.'); setLoading(false); return }
-    sb.from('invoices')
-      .select('*, clients(name, email, phone, business_name, address)')
-      .eq('invoice_number', invoiceNumber)
-      .single()
-      .then(({ data, error: err }) => {
-        if (err || !data) setError('Invoice not found. Please check the link.')
-        else { setInvoice(data); if (data.status === 'paid') setConfirmed(true) }
-        setLoading(false)
-      })
+    const fetchAll = async () => {
+      const { data: inv, error: err } = await sb.from('invoices')
+        .select('*, clients(name, email, phone, business_name, address)')
+        .eq('invoice_number', invoiceNumber)
+        .single()
+      if (err || !inv) { setError('Invoice not found. Please check the link.'); setLoading(false); return }
+      setInvoice(inv)
+      if (inv.status === 'paid') setConfirmed(true)
+      // Load business profile for the invoice owner
+      const { data: prof } = await sb.from('business_profiles').select('*').eq('user_id', inv.user_id).single()
+      setProfile(prof)
+      setLoading(false)
+    }
+    fetchAll()
   }, [invoiceNumber])
 
   const handleConfirmPayment = async () => {
     setConfirming(true)
-    await sb.from('invoices').update({ status: 'paid' }).eq('id', invoice.id)
-    setInvoice({ ...invoice, status: 'paid' })
+    await sb.from('invoices').update({ status:'paid' }).eq('id', invoice.id)
+    setInvoice({ ...invoice, status:'paid' })
     setConfirmed(true)
     setConfirming(false)
   }
-
-  const handleDownloadPDF = () => window.print()
 
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F7F8FA', fontFamily:"'Inter','Segoe UI',sans-serif" }}>
@@ -63,54 +67,59 @@ export default function InvoicePublic() {
     </div>
   )
 
-  const st = statusStyle(invoice.status)
+  const st       = statusStyle(invoice.status)
   const isOverdue = invoice.status === 'overdue'
   const isPaid    = invoice.status === 'paid'
   const daysOverdue = invoice.due_date ? Math.floor((Date.now() - new Date(invoice.due_date).getTime()) / 86400000) : 0
 
+  // Business info — fall back to generic if no profile set
+  const biz = {
+    name:    profile?.business_name || 'Your Business',
+    owner:   profile?.owner_name    || '',
+    email:   profile?.email         || '',
+    phone:   profile?.phone         || '',
+    address: profile?.address       || '',
+    city:    profile?.city          || 'Nairobi, Kenya',
+    tax:     profile?.tax_number    || '',
+    logo:    profile?.logo_url      || '',
+    mpesa:   profile?.mpesa_number  || '',
+    bank:    profile?.bank_name     || '',
+    account: profile?.bank_account  || '',
+    footer:  profile?.invoice_footer || 'Thank you for your business!',
+  }
+
   return (
     <>
-      {/* ── PRINT STYLES ── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #F7F8FA; }
-
-        /* Hide action buttons and banners when printing */
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Inter','Segoe UI',sans-serif; background:#F7F8FA; }
         @media print {
-          .no-print { display: none !important; }
-          body { background: #fff !important; }
-          .invoice-card { box-shadow: none !important; border: 1px solid #E5E7EB !important; }
-          .page-wrap { padding: 0 !important; background: #fff !important; }
-          @page {
-            size: A4;
-            margin: 12mm 14mm;
-          }
+          .no-print { display:none !important; }
+          body { background:#fff !important; }
+          .invoice-card { box-shadow:none !important; }
+          .page-wrap { padding:0 !important; background:#fff !important; }
+          @page { size:A4; margin:12mm 14mm; }
         }
       `}</style>
 
       <div className="page-wrap" style={{ minHeight:'100vh', background:'#F7F8FA', padding:'32px 20px', fontFamily:"'Inter','Segoe UI',sans-serif" }}>
         <div style={{ maxWidth:'700px', margin:'0 auto' }}>
 
-          {/* ── ACTION BAR (hidden on print) ── */}
-          <div className="no-print" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px', padding:'14px 18px', background:'#fff', borderRadius:'12px', border:'1px solid #E5E7EB', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+          {/* ACTION BAR */}
+          <div className="no-print" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px', padding:'12px 18px', background:'#fff', borderRadius:'12px', border:'1px solid #E5E7EB' }}>
             <div style={{ fontSize:'13px', color:'#6B7280' }}>
               Invoice <strong style={{ color:'#1A1A2E' }}>{invoice.invoice_number}</strong> · {fmtDate(invoice.issue_date)}
             </div>
             <div style={{ display:'flex', gap:'8px' }}>
-              <button onClick={handleDownloadPDF}
+              <button onClick={() => window.print()}
                 style={{ display:'flex', alignItems:'center', gap:'6px', padding:'8px 16px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer' }}>
                 ⬇️ Download PDF
-              </button>
-              <button onClick={() => window.print()}
-                style={{ padding:'8px 16px', background:'#F7F8FA', border:'1px solid #E5E7EB', borderRadius:'8px', fontSize:'13px', fontWeight:'600', color:'#6B7280', cursor:'pointer' }}>
-                🖨️ Print
               </button>
             </div>
           </div>
 
-          {/* ── STATUS BANNERS (hidden on print) ── */}
+          {/* BANNERS */}
           {confirmed && (
             <div className="no-print" style={{ background:'#DCFCE7', border:'1px solid #BBF7D0', borderRadius:'12px', padding:'14px 20px', marginBottom:'16px', display:'flex', alignItems:'center', gap:'10px' }}>
               <span style={{ fontSize:'20px' }}>🎉</span>
@@ -120,7 +129,6 @@ export default function InvoicePublic() {
               </div>
             </div>
           )}
-
           {isOverdue && !confirmed && (
             <div className="no-print" style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:'12px', padding:'14px 20px', marginBottom:'16px', display:'flex', alignItems:'center', gap:'10px' }}>
               <span style={{ fontSize:'20px' }}>🚨</span>
@@ -131,17 +139,22 @@ export default function InvoicePublic() {
             </div>
           )}
 
-          {/* ── INVOICE CARD ── */}
+          {/* INVOICE CARD */}
           <div className="invoice-card" style={{ background:'#fff', borderRadius:'16px', boxShadow:'0 4px 24px rgba(0,0,0,0.08)', overflow:'hidden' }}>
 
             {/* HEADER */}
             <div style={{ background:'linear-gradient(135deg,#1A1A2E,#0D3B33)', padding:'32px 36px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
               <div>
-                <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'20px' }}>
-                  <div style={{ width:'36px', height:'36px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px' }}>🧾</div>
+                <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'20px' }}>
+                  {biz.logo ? (
+                    <img src={biz.logo} alt="logo" style={{ width:'44px', height:'44px', borderRadius:'8px', objectFit:'cover', background:'#fff' }}
+                      onError={e => e.target.style.display='none'} />
+                  ) : (
+                    <div style={{ width:'40px', height:'40px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'20px' }}>🧾</div>
+                  )}
                   <div>
-                    <div style={{ color:'#fff', fontSize:'16px', fontWeight:'700' }}>FaidhaTrack</div>
-                    <div style={{ color:'#13A88F', fontSize:'10px', letterSpacing:'1.5px', textTransform:'uppercase' }}>Invoice Manager</div>
+                    <div style={{ color:'#fff', fontSize:'17px', fontWeight:'800' }}>{biz.name}</div>
+                    {biz.email && <div style={{ color:'#13A88F', fontSize:'11px', marginTop:'2px' }}>{biz.email}</div>}
                   </div>
                 </div>
                 <div style={{ color:'#94A3B8', fontSize:'11px', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'1px' }}>Invoice Number</div>
@@ -163,15 +176,18 @@ export default function InvoicePublic() {
             </div>
 
             <div style={{ padding:'36px' }}>
-
               {/* FROM / TO */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px', marginBottom:'36px', paddingBottom:'28px', borderBottom:'1px solid #F1F5F9' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px', marginBottom:'32px', paddingBottom:'24px', borderBottom:'1px solid #F1F5F9' }}>
                 <div>
                   <div style={{ fontSize:'11px', fontWeight:'700', color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'1.2px', marginBottom:'12px' }}>From</div>
-                  <div style={{ fontSize:'15px', fontWeight:'800', color:'#1A1A2E', marginBottom:'6px' }}>Your Business</div>
+                  <div style={{ fontSize:'15px', fontWeight:'800', color:'#1A1A2E', marginBottom:'6px' }}>{biz.name}</div>
                   <div style={{ fontSize:'13px', color:'#6B7280', lineHeight:'1.7' }}>
-                    via FaidhaTrack<br />
-                    Nairobi, Kenya
+                    {biz.owner  && <>{biz.owner}<br /></>}
+                    {biz.email  && <>{biz.email}<br /></>}
+                    {biz.phone  && <>{biz.phone}<br /></>}
+                    {biz.address && <>{biz.address}<br /></>}
+                    {biz.city}
+                    {biz.tax    && <><br />KRA PIN: {biz.tax}</>}
                   </div>
                 </div>
                 <div>
@@ -210,7 +226,7 @@ export default function InvoicePublic() {
               </div>
 
               {/* TOTALS */}
-              <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'32px' }}>
+              <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'28px' }}>
                 <div style={{ width:'280px' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', fontSize:'13px', color:'#6B7280', borderBottom:'1px solid #F1F5F9' }}>
                     <span>Subtotal</span><span style={{ fontWeight:'600' }}>{fmt(invoice.amount)}</span>
@@ -225,21 +241,54 @@ export default function InvoicePublic() {
                 </div>
               </div>
 
-              {/* PAYMENT CTA — hidden on print if paid */}
-              {!isPaid && (
-                <div className="no-print" style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:'12px', padding:'20px 24px', marginBottom:'24px' }}>
+              {/* PAYMENT INSTRUCTIONS */}
+              {!isPaid && (biz.mpesa || biz.bank) && (
+                <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:'12px', padding:'18px 22px', marginBottom:'24px' }}>
+                  <div style={{ fontSize:'14px', fontWeight:'700', color:'#166534', marginBottom:'10px' }}>💳 Payment Details</div>
+                  <div style={{ display:'grid', gridTemplateColumns: biz.mpesa && biz.bank ? '1fr 1fr' : '1fr', gap:'14px', fontSize:'13px', color:'#166534', lineHeight:'1.7' }}>
+                    {biz.mpesa && (
+                      <div>
+                        <div style={{ fontWeight:'700', marginBottom:'3px' }}>📱 M-Pesa</div>
+                        <div>{biz.mpesa}</div>
+                        <div style={{ fontSize:'11px', opacity:0.7 }}>Send & share the reference</div>
+                      </div>
+                    )}
+                    {biz.bank && (
+                      <div>
+                        <div style={{ fontWeight:'700', marginBottom:'3px' }}>🏦 Bank Transfer</div>
+                        <div>{biz.bank}</div>
+                        {biz.account && <div>Acc: {biz.account}</div>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* GENERIC PAYMENT CTA if no payment details set */}
+              {!isPaid && !biz.mpesa && !biz.bank && (
+                <div className="no-print" style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:'12px', padding:'18px 22px', marginBottom:'24px' }}>
                   <div style={{ fontSize:'14px', fontWeight:'700', color:'#166534', marginBottom:'6px' }}>💳 Payment Instructions</div>
-                  <div style={{ fontSize:'13px', color:'#166534', lineHeight:'1.6', marginBottom:'16px' }}>
-                    Please send payment via M-Pesa or bank transfer and share the transaction reference with your service provider.
+                  <div style={{ fontSize:'13px', color:'#166534', lineHeight:'1.6', marginBottom:'14px' }}>
+                    Please send payment via M-Pesa or bank transfer and share the transaction reference.
                   </div>
                   <button onClick={handleConfirmPayment} disabled={confirming}
-                    style={{ padding:'10px 24px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer', opacity:confirming?0.7:1 }}>
+                    style={{ padding:'10px 22px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer', opacity:confirming?0.7:1 }}>
                     {confirming ? 'Confirming...' : '✓ Confirm Payment Made'}
                   </button>
                 </div>
               )}
 
-              {/* PAID WATERMARK on PDF */}
+              {/* CONFIRM PAYMENT BUTTON when payment details are set */}
+              {!isPaid && (biz.mpesa || biz.bank) && (
+                <div className="no-print" style={{ marginBottom:'24px' }}>
+                  <button onClick={handleConfirmPayment} disabled={confirming}
+                    style={{ padding:'10px 22px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer', opacity:confirming?0.7:1 }}>
+                    {confirming ? 'Confirming...' : '✓ I have made this payment'}
+                  </button>
+                </div>
+              )}
+
+              {/* PAID STAMP */}
               {isPaid && (
                 <div style={{ textAlign:'center', marginBottom:'24px' }}>
                   <span style={{ display:'inline-block', padding:'8px 28px', borderRadius:'8px', border:'3px solid #059669', color:'#059669', fontSize:'18px', fontWeight:'900', letterSpacing:'4px', textTransform:'uppercase', opacity:0.7, transform:'rotate(-2deg)' }}>
@@ -249,23 +298,22 @@ export default function InvoicePublic() {
               )}
 
               {/* FOOTER */}
-              <div style={{ borderTop:'1px solid #F1F5F9', paddingTop:'20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div style={{ fontSize:'12px', color:'#9CA3AF' }}>Thank you for your business 🙏</div>
-                <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+              <div style={{ borderTop:'1px solid #F1F5F9', paddingTop:'18px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div style={{ fontSize:'12px', color:'#9CA3AF', fontStyle:'italic' }}>{biz.footer}</div>
+                <div style={{ display:'flex', alignItems:'center', gap:'5px' }}>
                   <div style={{ width:'16px', height:'16px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', borderRadius:'3px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'9px' }}>🧾</div>
-                  <span style={{ fontSize:'11px', color:'#9CA3AF', fontWeight:'500' }}>Powered by FaidhaTrack</span>
+                  <span style={{ fontSize:'11px', color:'#9CA3AF' }}>FaidhaTrack</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* BOTTOM DOWNLOAD BUTTON (no-print) */}
           <div className="no-print" style={{ textAlign:'center', marginTop:'20px', paddingBottom:'40px' }}>
-            <button onClick={handleDownloadPDF}
-              style={{ display:'inline-flex', alignItems:'center', gap:'8px', padding:'11px 28px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', color:'#fff', border:'none', borderRadius:'10px', fontSize:'14px', fontWeight:'700', cursor:'pointer', boxShadow:'0 4px 12px rgba(15,123,108,0.3)' }}>
+            <button onClick={() => window.print()}
+              style={{ display:'inline-flex', alignItems:'center', gap:'8px', padding:'11px 28px', background:'linear-gradient(135deg,#0F7B6C,#13A88F)', color:'#fff', border:'none', borderRadius:'10px', fontSize:'14px', fontWeight:'700', cursor:'pointer' }}>
               ⬇️ Download as PDF
             </button>
-            <div style={{ fontSize:'12px', color:'#9CA3AF', marginTop:'8px' }}>Opens print dialog — select "Save as PDF" as destination</div>
+            <div style={{ fontSize:'12px', color:'#9CA3AF', marginTop:'8px' }}>Select "Save as PDF" in the print dialog</div>
           </div>
         </div>
       </div>
