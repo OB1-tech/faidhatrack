@@ -11,6 +11,15 @@ import Settings from './pages/Settings'
 
 const C = { accent:'#0F7B6C', accentL:'#13A88F', gold:'#F4A020' }
 
+const navItems = [
+  { key:'dashboard', icon:'📊', label:'Home' },
+  { key:'invoices',  icon:'🧾', label:'Invoices' },
+  { key:'clients',   icon:'👥', label:'Clients' },
+  { key:'payments',  icon:'💳', label:'Payments' },
+  { key:'insights',  icon:'🤖', label:'AI' },
+  { key:'settings',  icon:'⚙️', label:'Settings' },
+]
+
 export default function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -41,21 +50,14 @@ export default function App() {
   const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
   const userInit = userName.slice(0,2).toUpperCase()
 
-  const navItems = [
-    { key:'dashboard', icon:'📊', label:'Dashboard' },
-    { key:'invoices',  icon:'🧾', label:'Invoices' },
-    { key:'clients',   icon:'👥', label:'Clients' },
-    { key:'payments',  icon:'💳', label:'Payments' },
-    { key:'insights',  icon:'🤖', label:'AI Insights' },
-    { key:'settings',  icon:'⚙️', label:'Settings' },
-  ]
-
   const pages = { dashboard:Dashboard, invoices:Invoices, clients:Clients, payments:Payments, insights:Insights, settings:Settings }
   const ActivePage = pages[page] || Dashboard
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', fontFamily:"'Inter','Segoe UI',sans-serif" }}>
-      <aside style={{ width:'220px', background:'#1A1A2E', display:'flex', flexDirection:'column', padding:'24px 0', flexShrink:0, position:'fixed', top:0, left:0, bottom:0, zIndex:50 }}>
+
+      {/* ── DESKTOP SIDEBAR ── */}
+      <aside className="sidebar-desktop" style={{ width:'220px', background:'#1A1A2E', flexDirection:'column', padding:'24px 0', flexShrink:0, position:'fixed', top:0, left:0, bottom:0, zIndex:50 }}>
         <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'0 20px 24px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ width:'32px', height:'32px', background:`linear-gradient(135deg,${C.accent},${C.accentL})`, borderRadius:'7px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px' }}>🧾</div>
           <div>
@@ -68,7 +70,7 @@ export default function App() {
           {navItems.map(item => (
             <button key={item.key} onClick={() => setPage(item.key)}
               style={{ display:'flex', alignItems:'center', gap:'10px', padding:'9px 10px', borderRadius:'8px', fontSize:'13px', fontWeight:'500', cursor:'pointer', border:'none', width:'100%', textAlign:'left', background: page===item.key ? 'rgba(15,123,108,0.25)' : 'none', color: page===item.key ? '#fff' : '#94A3B8' }}>
-              <span>{item.icon}</span> {item.label}
+              <span>{item.icon}</span> {item.label === 'Home' ? 'Dashboard' : item.label}
             </button>
           ))}
         </nav>
@@ -84,7 +86,20 @@ export default function App() {
           </div>
         </div>
       </aside>
-      <div style={{ marginLeft:'220px', flex:1, display:'flex', flexDirection:'column', minHeight:'100vh' }}>
+
+      {/* ── MOBILE BOTTOM NAV ── */}
+      <nav className="bottom-nav">
+        {navItems.map(item => (
+          <button key={item.key} className={`nav-item-mobile ${page===item.key?'active':''}`}
+            onClick={() => setPage(item.key)}>
+            <span className="nav-item-mobile-icon">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="main-offset" style={{ marginLeft:'220px', flex:1, display:'flex', flexDirection:'column', minHeight:'100vh' }}>
         <ActivePage session={session} onNav={setPage} />
       </div>
     </div>

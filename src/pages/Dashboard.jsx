@@ -283,10 +283,10 @@ export default function Dashboard({ session, onNav }) {
         </div>
       </div>
 
-      <div style={S.content}>
+      <div className="mobile-content-pad" style={S.content}>
 
         {/* ── STAT CARDS ── */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px' }}>
+        <div className="stats-grid-4" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px' }}>
           {[
             { label:'Total Revenue',  value:fmt(totalRev),   sub:`${paid.length} paid`,      icon:'💰', color:'#0F7B6C' },
             { label:'Outstanding',    value:fmt(totalOut),   sub:`${unpaid.length} pending`,  icon:'⏳', color:'#F4A020' },
@@ -303,7 +303,7 @@ export default function Dashboard({ session, onNav }) {
         </div>
 
         {/* ── ROW 2: TREND LINE + DONUT ── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:'18px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:'18px' }} className='bottom-grid-chart' style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:'18px' }}>
 
           {/* MONTHLY REVENUE TREND */}
           <div style={S.card}>
@@ -345,7 +345,7 @@ export default function Dashboard({ session, onNav }) {
         </div>
 
         {/* ── ROW 3: TOP CLIENTS + MONTHLY COUNT ── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'18px' }}>
+        <div className="bottom-grid-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'18px' }}>
 
           {/* TOP CLIENTS */}
           <div style={S.card}>
@@ -398,7 +398,7 @@ export default function Dashboard({ session, onNav }) {
         </div>
 
         {/* ── ROW 4: RECENT INVOICES + OVERDUE ── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:'18px' }}>
+        <div className="bottom-grid-2col" style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:'18px' }}>
 
           {/* RECENT INVOICES */}
           <div style={S.card}>
@@ -506,7 +506,7 @@ export default function Dashboard({ session, onNav }) {
       {/* MODAL */}
       {modal && (
         <div style={S.overlay} onClick={e => e.target===e.currentTarget && setModal(false)}>
-          <div style={S.modal}>
+          <div className="modal-box" style={S.modal}>
             <div style={{ fontSize:'17px', fontWeight:'800', marginBottom:'18px' }}>➕ New Invoice</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
               <div style={{ gridColumn:'1/-1' }}>

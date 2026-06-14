@@ -128,9 +128,9 @@ export default function Clients({ session, onNav }) {
         </div>
       </div>
 
-      <div style={S.content}>
+      <div className='mobile-content-pad' style={S.content}>
         {/* STATS ROW */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'14px' }}>
+        <div className="stats-grid-3" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'14px' }}>
           {[
             { label:'Total Clients', value: clients.length,                                                                        icon:'👥', color:'#0F7B6C' },
             { label:'Total Billed',  value: fmt(invoices.reduce((s,i) => s+Number(i.amount), 0)),                                  icon:'💰', color:'#6366F1' },
@@ -162,7 +162,7 @@ export default function Clients({ session, onNav }) {
               {search ? 'No clients match your search.' : 'No clients yet — add your first one! 👆'}
             </div>
           ) : (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px,1fr))', gap:'1px', background:'#E5E7EB' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px,1fr))', gap:'1px', background:'#E5E7EB' }}>
               {filtered.map((c, i) => {
                 const stats = clientStats(c.id)
                 const color = COLORS[i % COLORS.length]
@@ -225,8 +225,8 @@ export default function Clients({ session, onNav }) {
 
       {/* ── ADD CLIENT MODAL ── */}
       {clientModal && (
-        <div style={S.overlay} onClick={e => e.target===e.currentTarget && setClientModal(false)}>
-          <div style={S.modal}>
+        <div className='modal-overlay-mobile' style={S.overlay} onClick={e => e.target===e.currentTarget && setClientModal(false)}>
+          <div className='modal-box' style={S.modal}>
             <div style={{ fontSize:'17px', fontWeight:'800', marginBottom:'18px' }}>👥 New Client</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px' }}>
               {[
@@ -256,8 +256,8 @@ export default function Clients({ session, onNav }) {
 
       {/* ── NEW INVOICE FOR CLIENT MODAL ── */}
       {invoiceModal && (
-        <div style={S.overlay} onClick={e => e.target===e.currentTarget && setInvoiceModal(null)}>
-          <div style={S.modal}>
+        <div className='modal-overlay-mobile' style={S.overlay} onClick={e => e.target===e.currentTarget && setInvoiceModal(null)}>
+          <div className='modal-box' style={S.modal}>
             {/* CLIENT CONTEXT HEADER */}
             <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'20px', padding:'14px 16px', background:'#F0FDF4', borderRadius:'10px', border:'1px solid #BBF7D0' }}>
               <div style={{ width:'36px', height:'36px', borderRadius:'50%', background:'#0F7B6C', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'13px', fontWeight:'700', color:'#fff', flexShrink:0 }}>

@@ -106,9 +106,9 @@ export default function Invoices({ session }) {
         </div>
       </div>
 
-      <div style={S.content}>
+      <div className='mobile-content-pad' style={S.content}>
         {/* FILTER TABS */}
-        <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
+        <div className="filter-tabs" style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
           {FILTERS.map(f => (
             <button key={f} onClick={() => setFilter(f)}
               style={{ padding:'6px 14px', borderRadius:'20px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border:'1.5px solid',
@@ -127,7 +127,7 @@ export default function Invoices({ session }) {
             <thead>
               <tr style={{ background:'#F7F8FA' }}>
                 {['Client','Invoice #','Amount','Issue Date','Due Date','Status','Actions'].map(h => (
-                  <th key={h} style={{ fontSize:'10px', fontWeight:'600', color:'#6B7280', textTransform:'uppercase', letterSpacing:'0.6px', padding:'10px 16px', textAlign:'left', borderBottom:'1px solid #E5E7EB' }}>{h}</th>
+                  <th key={h} className={['Issue Date','Invoice #'].includes(h)?'table-hide-mobile':''} style={{ fontSize:'10px', fontWeight:'600', color:'#6B7280', textTransform:'uppercase', letterSpacing:'0.6px', padding:'10px 16px', textAlign:'left', borderBottom:'1px solid #E5E7EB' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -209,8 +209,8 @@ export default function Invoices({ session }) {
 
       {/* CREATE MODAL */}
       {modal && (
-        <div style={S.overlay} onClick={e => e.target===e.currentTarget && setModal(false)}>
-          <div style={S.modal}>
+        <div className='modal-overlay-mobile' style={S.overlay} onClick={e => e.target===e.currentTarget && setModal(false)}>
+          <div className='modal-box' style={S.modal}>
             <div style={{ fontSize:'17px', fontWeight:'800', marginBottom:'18px' }}>➕ New Invoice</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
               {[

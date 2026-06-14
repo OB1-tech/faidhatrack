@@ -88,9 +88,9 @@ export default function Payments({ session }) {
         </div>
       </div>
 
-      <div style={S.content}>
+      <div className='mobile-content-pad' style={S.content}>
         {/* STATS */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px' }}>
+        <div className="stats-grid-4" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px' }}>
           {[
             { label:'Total Collected', value:fmt(totalPaid),   icon:'💰', color:'#0F7B6C' },
             { label:'This Month',      value:fmt(thisMonth),   icon:'📅', color:'#6366F1' },
@@ -105,7 +105,7 @@ export default function Payments({ session }) {
           ))}
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:'18px' }}>
+        <div className="bottom-grid-2col" style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:'18px' }}>
           {/* PAYMENTS TABLE */}
           <div style={S.card}>
             <div style={{ padding:'16px 18px', borderBottom:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -212,8 +212,8 @@ export default function Payments({ session }) {
 
       {/* MODAL */}
       {modal && (
-        <div style={S.overlay} onClick={e => e.target===e.currentTarget && setModal(false)}>
-          <div style={S.modal}>
+        <div className='modal-overlay-mobile' style={S.overlay} onClick={e => e.target===e.currentTarget && setModal(false)}>
+          <div className='modal-box' style={S.modal}>
             <div style={{ fontSize:'17px', fontWeight:'800', marginBottom:'18px' }}>💳 Record Payment</div>
             <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
               <div>

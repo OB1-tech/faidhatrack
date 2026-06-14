@@ -134,7 +134,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks, no explanation
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } } @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
 
-      <div style={S.content}>
+      <div className='mobile-content-pad' style={S.content}>
         {/* QUICK STATS */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px' }}>
           {[
